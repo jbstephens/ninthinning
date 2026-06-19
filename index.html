@@ -81,10 +81,10 @@
     line-height: 1;
   }
   #chipViewMode {
-    font-size: 10px;
+    font-size: 12px;
     font-weight: 900;
     letter-spacing: 1.6px;
-    padding: 2px 6px;
+    padding: 3px 8px;
     border-radius: 5px;
     margin-left: auto;
     line-height: 1;
@@ -402,6 +402,9 @@
     font-size: 22px;
     font-weight: 900;
     letter-spacing: 2px;
+    appearance: none;
+    font-family: inherit;
+    padding: 0;
     box-shadow:
       0 8px 28px rgba(0,0,0,0.6),
       0 2px 6px rgba(255,178,77,0.3),
@@ -487,10 +490,12 @@
     color: #fff;
     border-radius: 10px;
     padding: 8px 10px;
-    min-width: 58px;
+    min-width: 52px;
+    min-height: 44px;
     display: flex; flex-direction: column; align-items: center; gap: 1px;
     cursor: pointer;
     font-family: inherit;
+    touch-action: manipulation;
     transition: background 0.12s ease, border-color 0.12s ease, transform 0.06s ease;
   }
   .pp-chip b { font-size: 15px; letter-spacing: 1px; }
@@ -576,6 +581,8 @@
     font-size: 20px;
     font-weight: 800;
     letter-spacing: 1px;
+    appearance: none;
+    padding: 0;
     box-shadow: 0 6px 22px rgba(0,0,0,0.5), inset 0 -8px 18px rgba(0,0,0,0.45), inset 0 6px 14px rgba(255,255,255,0.15);
     z-index: 6;
     cursor: pointer;
@@ -903,8 +910,8 @@
 
   /* Diff badge in HUD */
   #diffBadge {
-    font-size: 10px; opacity: 0.6; letter-spacing: 1px; text-transform: uppercase;
-    padding: 1px 6px; background: rgba(255,255,255,0.1); border-radius: 6px;
+    font-size: 11px; color: rgba(255,255,255,0.92); letter-spacing: 1px; text-transform: uppercase;
+    padding: 2px 7px; background: rgba(255,255,255,0.18); border-radius: 6px; font-weight: 700;
   }
 
   /* Responsive polish */
@@ -1194,13 +1201,15 @@
     <div class="banner-accent-bottom"></div>
   </div>
 </div>
+<!-- Screen-reader-only live region: outcome banners are announced here too. -->
+<div id="srAnnouncer" aria-live="assertive" aria-atomic="true" style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;"></div>
 <div id="swingFeedback">
   <span class="timing-word"></span>
   <div class="quality-track"><div class="quality-fill"></div></div>
 </div>
 
-<div id="swingBtn">SWING</div>
-<div id="aimPad" aria-label="Aim contact point">
+<button id="swingBtn" type="button" aria-label="Swing the bat">SWING</button>
+<div id="aimPad" role="region" aria-label="Drag to aim contact point">
   <div class="label">AIM</div>
   <div class="knob"></div>
 </div>
@@ -1224,7 +1233,7 @@
   <div class="aim-reticle"><div class="ar-dot"></div></div>
   <div class="zone-label">AIM</div>
 </div>
-<div id="throwBtn" role="button" aria-label="Throw pitch">⚾ THROW</div>
+<button id="throwBtn" type="button" aria-label="Throw pitch">⚾ THROW</button>
 <div id="pitchHint">Pick a pitch · drag to aim · THROW</div>
 
 <!-- Title screen -->
@@ -1530,7 +1539,7 @@ function setCrowdLevel(level, ramp = 0.6) {
 
 // Crowd "ohhh" disappointment dip then recovery (for whiffs / strikeouts / outs)
 function crowdGroan(depth = 0.6, recoverTo = 0.05) {
-  if (!audioCtx || !crowdGain) return;
+  if (!audioOn || !settings.crowdOn || !audioCtx || !crowdGain) return;
   const now = audioCtx.currentTime;
   const baseline = Math.max(0.03, crowdGain.gain.value);
   const dipLevel = Math.max(0.005, baseline * (1 - 0.7 * depth));
@@ -1647,7 +1656,7 @@ function playWhiff() {
 }
 
 function playMittPop() {
-  if (!audioOn) return;
+  if (!audioOn || !settings.sfxOn) return;
   ensureAudio();
   if (!audioCtx) return;
   const now = audioCtx.currentTime;
@@ -1682,7 +1691,7 @@ function playMittPop() {
 
 // Quiet pitch whoosh as ball is in flight
 function playPitchWhoosh() {
-  if (!audioOn) return;
+  if (!audioOn || !settings.sfxOn) return;
   ensureAudio();
   if (!audioCtx) return;
   const now = audioCtx.currentTime;
@@ -1709,7 +1718,7 @@ function playPitchWhoosh() {
 
 // Animated footsteps cue (used between innings / for walks)
 function playFootSteps(count = 4) {
-  if (!audioOn) return;
+  if (!audioOn || !settings.sfxOn) return;
   ensureAudio();
   if (!audioCtx) return;
   const base = audioCtx.currentTime;
@@ -1743,7 +1752,7 @@ function playFootSteps(count = 4) {
 // Classic 7-note "Charge!" stadium organ jingle
 // Pattern: Da-da-da-DA-da-da-DA  (notes: G G C E G - C E)
 function playOrganJingle() {
-  if (!audioOn) return;
+  if (!audioOn || !settings.crowdOn) return;
   ensureAudio();
   if (!audioCtx) return;
   const now = audioCtx.currentTime;
@@ -1785,7 +1794,7 @@ function playOrganJingle() {
 
 // 2-note descending "uh-oh" pop fly cue
 function playPopFly() {
-  if (!audioOn) return;
+  if (!audioOn || !settings.sfxOn) return;
   ensureAudio();
   if (!audioCtx) return;
   const now = audioCtx.currentTime;
@@ -1818,7 +1827,7 @@ function playPopFly() {
 
 // Stylized announcer "GOIN' GOIN' GONE" — three rising formant-y vowel swells
 function playAnnouncerHomerun() {
-  if (!audioOn) return;
+  if (!audioOn || !settings.crowdOn) return;
   ensureAudio();
   if (!audioCtx) return;
   const now = audioCtx.currentTime;
@@ -2121,22 +2130,41 @@ function saveSettings() {
 }
 
 // Best scores
-const bestScores = { hits: 0, homers: 0, score: 0 };
+// Best scores are kept per innings-setting so a 3-inning record doesn't shadow a 9-inning one.
+const bestByInnings = { 3: { hits:0, homers:0, score:0 }, 6: { hits:0, homers:0, score:0 }, 9: { hits:0, homers:0, score:0 } };
+function bestForCurrent() { return bestByInnings[settings.innings] || bestByInnings[9]; }
+// Back-compat alias used by the title screen.
+const bestScores = bestForCurrent();
 function loadBest() {
   try {
     const b = JSON.parse(localStorage.getItem('ni_best') || '{}');
-    if (b.hits) bestScores.hits = b.hits;
-    if (b.homers) bestScores.homers = b.homers;
-    if (b.score) bestScores.score = b.score;
+    // New per-innings format
+    if (b.byInn) {
+      for (const k of [3,6,9]) {
+        const r = b.byInn[k] || {};
+        bestByInnings[k].hits   = r.hits   || 0;
+        bestByInnings[k].homers = r.homers || 0;
+        bestByInnings[k].score  = r.score  || 0;
+      }
+    } else {
+      // Migrate flat record into the 9-inning bucket.
+      bestByInnings[9].hits   = b.hits   || 0;
+      bestByInnings[9].homers = b.homers || 0;
+      bestByInnings[9].score  = b.score  || 0;
+    }
+    // Refresh the alias so the title screen reads the right bucket on load.
+    Object.assign(bestScores, bestForCurrent());
   } catch(e) {}
 }
 function saveBest(hits, homers, score) {
+  const bucket = bestForCurrent();
   let newBest = false;
-  if (hits > bestScores.hits) { bestScores.hits = hits; newBest = true; }
-  if (homers > bestScores.homers) { bestScores.homers = homers; newBest = true; }
-  if (score > bestScores.score) { bestScores.score = score; newBest = true; }
+  if (hits > bucket.hits)   { bucket.hits = hits; newBest = true; }
+  if (homers > bucket.homers) { bucket.homers = homers; newBest = true; }
+  if (score > bucket.score) { bucket.score = score; newBest = true; }
   if (newBest) {
-    try { localStorage.setItem('ni_best', JSON.stringify(bestScores)); } catch(e) {}
+    Object.assign(bestScores, bucket);
+    try { localStorage.setItem('ni_best', JSON.stringify({ byInn: bestByInnings })); } catch(e) {}
   }
   return newBest;
 }
@@ -2349,6 +2377,8 @@ function userThrowPitch() {
   const p = game.pitching;
   p.locked = true;
   if (throwBtnEl) throwBtnEl.classList.add('locked');
+  // Brief release thump — feels like the ball leaving the hand.
+  if (typeof playMittPop === 'function') playMittPop();
   newPitch({
     typeKey: p.selectedType,
     targetX: p.aimX,
@@ -2376,6 +2406,10 @@ function tickPitch(dt) {
       handleNoSwing(inZone);
     }
     game.state = 'result';
+    // Drop the pitched ball so the watchdog + hit-ball logic don't conflate it
+    // with a "still in flight" pitch.
+    game.pitch = null;
+    game.ball = null;
     return;
   }
   // Late-break interpolation: x/y mostly straight until "late" fraction, then break sharply
@@ -2662,32 +2696,36 @@ function applyOutcome(outcome, hitAngle = 0, quality = 0.5) {
   }
   switch (outcome) {
     case 'homerun':
-      showBanner('HOME RUN!', 'Crushed it!', 'clr-hr');
-      playCheer(1.2, true);
+      showBanner(playerBatting ? 'HOME RUN!' : 'HOMER ALLOWED', playerBatting ? 'Crushed it!' : 'Off the scoreboard.', playerBatting ? 'clr-hr' : 'clr-out');
+      if (playerBatting) playCheer(1.2, true);
+      else crowdGroan(0.85, 0.18);
       advanceRunners(4);
       if (playerBatting) { game.hits++; game.homers++; game.totalBases += 4; game.atBats++; }
       endAtBat();
       animateHit('homerun', hitAngle, quality);
       break;
     case 'triple':
-      showBanner('TRIPLE!', 'Gap shot!', 'clr-triple');
-      playCheer(1.0);
+      showBanner(playerBatting ? 'TRIPLE!' : 'TRIPLE ALLOWED', playerBatting ? 'Gap shot!' : 'In the gap.', playerBatting ? 'clr-triple' : 'clr-out');
+      if (playerBatting) playCheer(1.0);
+      else crowdGroan(0.7, 0.1);
       advanceRunners(3);
       if (playerBatting) { game.hits++; game.totalBases += 3; game.atBats++; }
       endAtBat();
       animateHit('triple', hitAngle, quality);
       break;
     case 'double':
-      showBanner('DOUBLE!', 'Off the wall!', 'clr-double');
-      playCheer(0.85);
+      showBanner(playerBatting ? 'DOUBLE!' : 'DOUBLE ALLOWED', playerBatting ? 'Off the wall!' : 'Into the corner.', playerBatting ? 'clr-double' : 'clr-out');
+      if (playerBatting) playCheer(0.85);
+      else crowdGroan(0.55, 0.08);
       advanceRunners(2);
       if (playerBatting) { game.hits++; game.totalBases += 2; game.atBats++; }
       endAtBat();
       animateHit('double', hitAngle, quality);
       break;
     case 'single':
-      showBanner('SINGLE!', 'Base hit', 'clr-single');
-      playCheer(0.55);
+      showBanner(playerBatting ? 'SINGLE!' : 'HIT ALLOWED', playerBatting ? 'Base hit' : 'Drops in.', playerBatting ? 'clr-single' : 'clr-out');
+      if (playerBatting) playCheer(0.55);
+      else crowdGroan(0.35, 0.05);
       advanceRunners(1);
       if (playerBatting) { game.hits++; game.totalBases += 1; game.atBats++; }
       endAtBat();
@@ -2703,24 +2741,39 @@ function applyOutcome(outcome, hitAngle = 0, quality = 0.5) {
       break;
     case 'flyout':
       showBanner('FLY OUT', 'Caught it.', 'clr-out');
-      game.outs++; game.atBats++;
+      game.outs++;
+      if (playerBatting) {
+        game.atBats++;
+        playPopFly();
+        crowdGroan(0.5, 0.05);
+      } else {
+        playCheer(0.45);
+      }
       animateHit('flyout', hitAngle, quality);
-      playPopFly();          // 2-note "uh-oh" cue
-      crowdGroan(0.5, 0.05); // crowd disappointment
       endAtBat();
       break;
     case 'groundout':
       showBanner('GROUND OUT', '', 'clr-out');
-      game.outs++; game.atBats++;
+      game.outs++;
+      if (playerBatting) {
+        game.atBats++;
+        crowdGroan(0.45, 0.05);
+      } else {
+        playCheer(0.4);
+      }
       animateHit('groundout', hitAngle, quality);
-      crowdGroan(0.45, 0.05);
       endAtBat();
       break;
     case 'lineout':
       showBanner('LINE OUT', '', 'clr-out');
-      game.outs++; game.atBats++;
+      game.outs++;
+      if (playerBatting) {
+        game.atBats++;
+        crowdGroan(0.5, 0.05);
+      } else {
+        playCheer(0.45);
+      }
       animateHit('lineout', hitAngle, quality);
-      crowdGroan(0.5, 0.05);
       endAtBat();
       break;
   }
@@ -2766,15 +2819,21 @@ function advanceRunners(bases) {
 
 function bumpStrike(swung) {
   game.strikes++;
+  const playerBatting = (game.view !== 'pitching');
   if (game.strikes >= 3) {
     showBanner('STRIKEOUT', swung ? 'Swung through it.' : 'Looking.', 'clr-strike');
-    game.outs++; game.atBats++;
+    game.outs++;
     playUmpire('strike');
-    crowdGroan(0.6, 0.05);
-    if (game.view === 'pitching') game.strikeoutsThrown++;
+    if (playerBatting) {
+      game.atBats++;
+      crowdGroan(0.6, 0.05);
+    } else {
+      game.strikeoutsThrown++;
+      playCheer(0.55);
+    }
     endAtBat();
   } else {
-    showBanner(swung ? 'STRIKE!' : 'STRIKE!', `Count ${game.balls}-${game.strikes}`, 'clr-strike');
+    showBanner(swung ? 'STRIKE!' : 'CALLED STRIKE', `Count ${game.balls}-${game.strikes}`, 'clr-strike');
     playUmpire('strike');
     scheduleNext(1.1);
     game.resultPending = true;
@@ -2850,7 +2909,10 @@ function continueAfterAtBat() {
     if (game.half === 'bottom') {
       // Mark this inning as 0 for the home team if not already recorded
       const idx = game.inning - 1;
-      if (idx >= 0 && idx < homeRuns.length && homeRuns[idx] === null) homeRuns[idx] = 0;
+      if (idx >= 0) {
+        ensureInningSlot(idx);
+        if (homeRuns[idx] === null) homeRuns[idx] = 0;
+      }
       game.half = 'top';
       game.inning++;
       if (game.inning > totalInn && game.homeScore !== game.awayScore) {
@@ -2860,7 +2922,10 @@ function continueAfterAtBat() {
     } else {
       // Mark this inning (top half) as 0 for CPU if not already recorded
       const idx = game.inning - 1;
-      if (idx >= 0 && idx < awayRuns.length && awayRuns[idx] === null) awayRuns[idx] = 0;
+      if (idx >= 0) {
+        ensureInningSlot(idx);
+        if (awayRuns[idx] === null) awayRuns[idx] = 0;
+      }
       game.half = 'bottom';
     }
     // If TOP half, player pitches; else player bats
@@ -2874,6 +2939,10 @@ function continueAfterAtBat() {
       if (Math.random() < 0.55) playOrganJingle();
       setTimeout(() => playFootSteps(3), 250);
       updateHud();
+      // First batting half — fire deferred tutorial.
+      if (game.mode === 'playing' && !settings.tutorialSeen && settings.hintsOn && game.tutStep < 0) {
+        setTimeout(() => startTutorial(), 1600);
+      }
       setTimeout(() => {
         hideBanner();
         game.state = 'idle';
@@ -2910,9 +2979,13 @@ function setView(viewName) {
   if (viewName === 'pitching') {
     document.body.classList.add('pitching');
     unlockPitchingUI();
+    // Reset any stale drag/touch state from before the view switched
+    if (typeof aimZoneDrag !== 'undefined') aimZoneDrag = false;
+    if (typeof syncAimReticle === 'function') syncAimReticle();
   } else {
     document.body.classList.remove('pitching');
     game.pitching.locked = false;
+    if (typeof aimZoneDrag !== 'undefined') aimZoneDrag = false;
     if (throwBtnEl) throwBtnEl.classList.remove('locked');
   }
   updateHud();
@@ -2924,17 +2997,28 @@ function setView(viewName) {
 // ============================================================================
 function runPitchingHalf() {
   game.state = 'halfChange';
+  // Lock the pitching UI for the duration of the half-change banner so users
+  // can't throw a pitch before count/bases reset.
+  game.view = 'pitching';
+  document.body.classList.add('pitching');
+  game.pitching.locked = true;
+  if (throwBtnEl) throwBtnEl.classList.add('locked');
   showBanner(`TOP ${game.inning}`, 'You\'re pitching', 'clr-foul', 1.6);
   if (Math.random() < 0.7) setTimeout(() => playOrganJingle(), 300);
   // Quick "warm-up" beat then hand control to the user
   setTimeout(() => {
     hideBanner();
     setView('pitching');
-    // Reset count for the new half
+    // Reset count + CPU batter for the new half
     game.outs = 0;
     game.balls = 0;
     game.strikes = 0;
     game.bases = [false, false, false];
+    game.cpuBat.swinging = false;
+    game.cpuBat.swingT = 0;
+    game.cpuBat.contactDone = false;
+    game.cpuBat.decided = false;
+    game.cpuBat.willSwing = false;
     game.state = 'idle';
     game.pitch = null;
     updateHud();
@@ -2945,6 +3029,10 @@ function endGame() {
   game.mode = 'gameover';
   stopTutorial();
   document.body.classList.remove('in-game');
+  document.body.classList.remove('pitching');
+  game.view = 'batting';
+  game.pitching.locked = false;
+  if (throwBtnEl) throwBtnEl.classList.remove('locked');
   const end = document.getElementById('endScreen');
   const title = document.getElementById('endTitle');
   const sum = document.getElementById('endSummary');
@@ -2998,6 +3086,9 @@ function showBanner(main, sub, cls = 'clr-foul', duration = 1.6) {
   bannerSub.className = 'sub ' + cls;
   bannerEl.classList.add('show');
   bannerTimer = duration;
+  // Announce to screen readers.
+  const sr = document.getElementById('srAnnouncer');
+  if (sr) sr.textContent = main + (sub ? '. ' + sub : '');
 }
 function hideBanner() {
   bannerEl.classList.remove('show');
@@ -3205,14 +3296,20 @@ function updateLineScore() {
 }
 
 // Record runs per inning
+function ensureInningSlot(idx) {
+  // Grow + null-pad both arrays so display checks against `!== null` work.
+  while (homeRuns.length <= idx) homeRuns.push(null);
+  while (awayRuns.length <= idx) awayRuns.push(null);
+}
 function recordInningRuns(half, inning, runs) {
   const idx = inning - 1;
   if (idx < 0) return;
+  ensureInningSlot(idx);
   if (half === 'bottom') {
-    if (!homeRuns[idx]) homeRuns[idx] = 0;
+    if (homeRuns[idx] === null) homeRuns[idx] = 0;
     homeRuns[idx] += runs;
   } else {
-    if (!awayRuns[idx]) awayRuns[idx] = 0;
+    if (awayRuns[idx] === null) awayRuns[idx] = 0;
     awayRuns[idx] += runs;
   }
 }
@@ -3254,13 +3351,19 @@ const CAM_PITCH = {
 // to the active camera so they read the right values per view.
 let CAM = CAM_BAT;
 
+// External readers should call activeCam() instead of reading the legacy CAM global.
+function activeCam() {
+  return (typeof game !== 'undefined' && game && game.view === 'pitching') ? CAM_PITCH : CAM_BAT;
+}
 function project(x, y, z) {
-  const pitching = (typeof game !== 'undefined' && game && game.view === 'pitching');
-  const cam = pitching ? CAM_PITCH : CAM_BAT;
-  CAM = cam; // keep external readers in sync
+  const cam = activeCam();
+  // Refresh the legacy alias once per call site so anything that still reads
+  // CAM.horizonFrac / CAM.height directly stays consistent. Cheap and avoids
+  // an explicit accessor in dozens of hot paths.
+  CAM = cam;
   // In pitching view the camera is behind the mound looking back at the plate,
   // so flip z so that the plate (world z=0) becomes "far" and the mound (z=60) "near".
-  const wz = pitching ? (60 - z) : z;
+  const wz = (cam === CAM_PITCH) ? (60 - z) : z;
   const ez = wz + cam.back;
   if (ez <= 0.5) return null;
   const f = (Math.min(W, H * 1.6)) * 0.75;
@@ -3301,6 +3404,9 @@ function buildCrowdDots() {
         x: xx, y: yy,
         tier: t,
         hue, sat, bright,
+        // Pre-format the color string ONCE. Drawing 2400 dots per frame at 60fps
+        // was previously allocating ~2400 `hsl(...)` template literals per frame.
+        color: `hsl(${hue.toFixed(0)},${sat.toFixed(0)}%,${bright.toFixed(0)}%)`,
         wavePhase: Math.random() * Math.PI * 2,
         size: tierFrac > 0.65 ? 1 : 2,
       });
@@ -3341,6 +3447,7 @@ buildCrowdDots();
 function drawScene(timeMs) {
   const horizon = H * CAM.horizonFrac;
   const t = timeMs * 0.001;
+  const pitching = (game.view === 'pitching');
 
   // Layered sky (twilight ballpark vibe — deep blue dome fading to orange glow)
   drawSky(horizon, t);
@@ -3351,11 +3458,16 @@ function drawScene(timeMs) {
   // Soft horizon clouds drifting
   drawClouds(horizon, t);
 
-  // Stadium silhouette (back of stadium)
+  // Stadium silhouette (back of stadium). In pitching POV the camera is behind
+  // the mound looking back at home plate — what we'd see in the distance is
+  // the BACKSTOP, dugouts, and home-plate seating. Reuse the same silhouette;
+  // it reads as "stadium beyond home plate" too.
   drawStadiumSilhouette(horizon);
 
-  // Distant scoreboard above center-field wall
-  drawScoreboard(horizon, t);
+  // Outfield-only chrome — skip in pitching view (it's geometrically behind us).
+  if (!pitching) {
+    drawScoreboard(horizon, t);
+  }
 
   // Light towers with bloom — drawn before crowd so towers loom behind seating
   drawLightTowers(horizon, t);
@@ -3363,11 +3475,11 @@ function drawScene(timeMs) {
   // Crowd — dense tiered seating
   drawCrowd(horizon, t);
 
-  // Outfield wall with panels and distance markers
-  drawOutfieldWall(horizon);
-
-  // Foul poles at the wall corners
-  drawFoulPoles(horizon);
+  // Outfield wall + foul poles + distance markers only make sense in batting view.
+  if (!pitching) {
+    drawOutfieldWall(horizon);
+    drawFoulPoles(horizon);
+  }
 
   // Atmospheric haze between camera & stadium
   drawAtmosphericHaze(horizon);
@@ -3375,8 +3487,8 @@ function drawScene(timeMs) {
   // Field (grass) with mowed-pattern wedges
   drawGrass(horizon);
 
-  // Draw field details with perspective (foul lines + dirt cutout + pitcher mound)
-  drawFieldPerspective();
+  // Field details (foul lines + dirt cutout + pitcher mound) are batter-POV only.
+  if (!pitching) drawFieldPerspective();
 
   // Fielders (behind pitcher in depth, but drawn before pitcher so pitcher overlaps if needed)
   drawFielders(timeMs);
@@ -3384,18 +3496,20 @@ function drawScene(timeMs) {
   // Pitcher — only drawn when the player is BATTING (otherwise we ARE the pitcher)
   if (game.view !== 'pitching') drawPitcher(timeMs);
 
-  // CPU batter at the plate — only drawn when the player is PITCHING
-  if (game.view === 'pitching') drawCpuBatter(timeMs);
+  // CPU batter at the plate — only drawn when the player is PITCHING.
+  // Drawn here so the catcher-foreground / pitcher-shoulder can occlude in front.
+  if (pitching) drawCpuBatter(timeMs);
+
+  // In pitching view, the pitcher's shoulder/arm is between the camera and the ball.
+  // Draw the shoulder FIRST so the ball emerges from behind it on release.
+  if (pitching) drawPitchingForeground(timeMs);
 
   // Ball (in flight or sitting after pitch)
   if (game.pitch) drawBall(game.pitch, timeMs);
 
-  // Foreground swaps based on view
-  if (game.view === 'pitching') {
-    drawPitchingForeground(timeMs);
-  } else {
-    drawForeground(timeMs);
-  }
+  // Batting foreground (bat, hands, catcher, umpire) draws after the ball so the
+  // bat overlaps the ball on contact.
+  if (!pitching) drawForeground(timeMs);
 
   // Strike zone (3D K-zone guide)
   drawStrikeZone();
@@ -3413,8 +3527,14 @@ function drawScene(timeMs) {
 // ---------------------------------------------------------------------------
 // Stadium background helpers
 // ---------------------------------------------------------------------------
-function drawSky(horizon, t) {
-  // Twilight gradient: deep indigo at top, royal blue mid, warm orange at horizon
+// Sky gradients are static for a given canvas size — cache them and rebuild only on resize.
+let _skyGradient = null;
+let _skyGlow = null;
+let _skyCacheKey = '';
+function buildSkyGradients(horizon) {
+  const key = `${W}x${H}x${horizon}`;
+  if (_skyCacheKey === key && _skyGradient && _skyGlow) return;
+  _skyCacheKey = key;
   const sky = ctx.createLinearGradient(0, 0, 0, horizon);
   sky.addColorStop(0.00, '#0b1633');
   sky.addColorStop(0.30, '#1d3158');
@@ -3422,15 +3542,18 @@ function drawSky(horizon, t) {
   sky.addColorStop(0.78, '#a06a55');
   sky.addColorStop(0.92, '#e9a263');
   sky.addColorStop(1.00, '#f3c98a');
-  ctx.fillStyle = sky;
-  ctx.fillRect(0, 0, W, horizon);
-
-  // Subtle radial sun-glow on the horizon
+  _skyGradient = sky;
   const glow = ctx.createRadialGradient(W*0.5, horizon, 10, W*0.5, horizon, W*0.55);
   glow.addColorStop(0, 'rgba(255, 200, 130, 0.30)');
   glow.addColorStop(0.5, 'rgba(255, 150, 90, 0.10)');
   glow.addColorStop(1, 'rgba(255, 120, 70, 0)');
-  ctx.fillStyle = glow;
+  _skyGlow = glow;
+}
+function drawSky(horizon, t) {
+  buildSkyGradients(horizon);
+  ctx.fillStyle = _skyGradient;
+  ctx.fillRect(0, 0, W, horizon);
+  ctx.fillStyle = _skyGlow;
   ctx.fillRect(0, 0, W, horizon);
 }
 
@@ -3657,10 +3780,7 @@ function drawCrowd(horizon, t) {
     // Small individual bobbing
     const bob = Math.sin(t * 2 + d.wavePhase) * 0.4;
 
-    // Distance fade: back tiers slightly dimmer/cooler
-    const tierFrac = d.tier / (TIERS - 1);
-    const bright = d.bright * (1 - tierFrac * 0.25);
-    ctx.fillStyle = `hsl(${d.hue}, ${d.sat}%, ${bright}%)`;
+    ctx.fillStyle = d.color;
     ctx.fillRect(px, py + bob - wavePop, d.size, d.size);
   }
 
@@ -4834,8 +4954,12 @@ function drawStrikeZone() {
   // Zone world coords
   const X0 = -0.78, X1 = 0.78;   // ft left/right
   const Y0 = 1.55,  Y1 = 3.75;   // ft above ground
-  const Z_NEAR = 0.5;             // draw zone right at plate
-  const Z_FAR  = 2.0;             // back face (for 3D depth illusion)
+  // From batting POV the near face is at the plate (z=0.5). From pitching POV
+  // the camera is behind the mound looking back, so the near face sits at the
+  // larger z (toward the mound) and the far face at the plate.
+  const pitching = (game.view === 'pitching');
+  const Z_NEAR = pitching ? 2.0 : 0.5;
+  const Z_FAR  = pitching ? 0.5 : 2.0;
 
   // 4 corners near face (at plate)
   const NTL = project(X0, Y1, Z_NEAR);
@@ -6076,14 +6200,20 @@ const fireworks = [];
 let hrReplayActive = false;
 let hrReplayT = 0;
 
+// Respect the OS-level reduced-motion preference for the heavy cinematic effects.
+const _reducedMotion = (typeof window !== 'undefined' && window.matchMedia) ?
+  window.matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
 function setSlowMo(scale, duration) {
+  if (_reducedMotion.matches) return;
   timeScaleTarget = scale;
   timeScaleRampTimer = duration;
 }
 function shakeCamera(intensity) {
+  if (_reducedMotion.matches) intensity *= 0.15;
   screenShakeAmount = Math.max(screenShakeAmount, intensity);
 }
 function flashScreen(amount) {
+  if (_reducedMotion.matches) amount *= 0.15;
   screenFlash = Math.max(screenFlash, amount);
 }
 function spawnParticle(x, y, z, vx, vy, vz, life, color, size) {
@@ -6745,9 +6875,11 @@ function aimZoneEndH() { aimZoneDrag = false; }
 aimZoneEl.addEventListener('touchstart', aimZoneStart, { passive: false });
 aimZoneEl.addEventListener('touchmove',  aimZoneMove,  { passive: false });
 aimZoneEl.addEventListener('touchend',   aimZoneEndH);
+aimZoneEl.addEventListener('touchcancel', aimZoneEndH);
 aimZoneEl.addEventListener('mousedown',  aimZoneStart);
 window.addEventListener('mousemove', aimZoneMove);
 window.addEventListener('mouseup',   aimZoneEndH);
+window.addEventListener('blur',      aimZoneEndH);
 window.addEventListener('resize', syncAimReticle);
 
 function tryThrow(e) {
@@ -6755,8 +6887,10 @@ function tryThrow(e) {
   ensureAudio();
   if (game.view !== 'pitching') return;
   if (game.mode !== 'playing' && game.mode !== 'practice') return;
+  if (game.paused) return;
   if (game.pitching.locked) return;
   if (game.state === 'inflight') return;
+  if (game.state === 'halfChange') return;
   if (game.resultPending) return;
   userThrowPitch();
 }
@@ -6777,8 +6911,9 @@ window.addEventListener('keydown', e => {
       else trySwing(null);
     }
   }
-  // Number keys 1-5 pick a pitch type while pitching
-  if (game.view === 'pitching' && /^[1-5]$/.test(k)) {
+  // Number keys 1-5 pick a pitch type while pitching (ignore when typing in a form field)
+  if (game.view === 'pitching' && /^[1-5]$/.test(k) &&
+      (e.target === document.body || e.target === canvas)) {
     const types = ['fastball', 'curveball', 'slider', 'changeup', 'sinker'];
     game.pitching.selectedType = types[parseInt(k, 10) - 1];
     syncSelectedPitchChip();
@@ -6802,10 +6937,22 @@ window.addEventListener('keydown', e => {
 });
 window.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
 
-// Canvas click = swing (batting) or throw (pitching)
-canvas.addEventListener('mousedown', (e) => {
-  // Don't double-trigger if hitting UI
+// Canvas click = swing (batting) or throw (pitching). On touch devices the
+// synthesized mousedown fires ~300ms after a tap; we suppress it to avoid
+// double-firing when the user taps a UI button on iPad.
+let lastTouchTime = 0;
+canvas.addEventListener('touchstart', (e) => {
   if (e.target !== canvas) return;
+  lastTouchTime = performance.now();
+  // Don't preventDefault here — the SWING / THROW buttons need to receive
+  // their own touchstart. Only act on direct canvas taps.
+  if (game.view === 'pitching') tryThrow(e);
+  else trySwing(e);
+}, { passive: true });
+canvas.addEventListener('mousedown', (e) => {
+  if (e.target !== canvas) return;
+  // Suppress synthesized mousedown that follows a real touch.
+  if (performance.now() - lastTouchTime < 600) return;
   if (game.view === 'pitching') tryThrow(e);
   else trySwing(e);
 });
@@ -6880,6 +7027,10 @@ document.getElementById('quitBtn').addEventListener('click', () => {
   document.getElementById('titleScreen').classList.remove('hidden');
   document.body.classList.remove('in-game');
   document.body.classList.remove('practice-mode');
+  document.body.classList.remove('pitching');
+  game.view = 'batting';
+  game.pitching.locked = false;
+  if (throwBtnEl) throwBtnEl.classList.remove('locked');
   game.mode = 'menu';
   stopTutorial();
 });
@@ -6932,6 +7083,9 @@ document.querySelectorAll('.diff-tab[data-inn]').forEach(btn => {
     if (n !== 3 && n !== 6 && n !== 9) return;
     settings.innings = n;
     saveSettings();
+    // Refresh the displayed-best bucket for the new length.
+    Object.assign(bestScores, bestForCurrent());
+    if (typeof updateBestDisplay === 'function') updateBestDisplay();
     document.querySelectorAll('.diff-tab[data-inn]').forEach(t => {
       t.classList.toggle('active', parseInt(t.getAttribute('data-inn'), 10) === n);
     });
@@ -7123,13 +7277,14 @@ function startGame(practice) {
   game.hitsAllowed = 0;
   game.runsAllowed = 0;
   // Default view by half
-  setView(practice ? 'batting' : 'top' === game.half ? 'pitching' : 'batting');
+  setView(practice ? 'batting' : (game.half === 'top' ? 'pitching' : 'batting'));
   ensureAudio();
   if (settings.crowdOn) setCrowdLevel(0.05, 1);
   updateHud();
   updateDiffBadge();
-  // Tutorial on first play if not seen
-  if (!practice && !settings.tutorialSeen && settings.hintsOn) {
+  // Tutorial: only auto-run in practice (batting view). Real games defer the
+  // tutorial until the first BOTTOM half so the arrows land on the swing UI.
+  if (practice && !settings.tutorialSeen && settings.hintsOn) {
     setTimeout(() => startTutorial(), 400);
   }
   if (practice) {
